@@ -1,0 +1,175 @@
+version: '3'
+
+services:
+  namenode:
+    image: apache/hadoop:3
+    hostname: namenode
+    ports:
+      - 9870:9870
+    env_file:
+      - config
+    environment:
+      ENSURE_NAMENODE_DIR: "/tmp/hadoop-root/dfs/name"
+    command:  bash -c "hdfs namenode && hadoop fs -mkdir -p /user/hue && hadoop fs -chmod 777 /user/hue"
+    networks:
+      hadoop:
+        ipv4_address: 172.18.0.2
+
+  datanode:
+    image: apache/hadoop:3
+    command: ["hdfs", "datanode"]
+    env_file:
+      - config
+    networks:
+      hadoop:
+        ipv4_address: 172.18.0.3
+
+  resourcemanager:
+    image: apache/hadoop:3
+    hostname: resourcemanager
+    command: ["yarn", "resourcemanager"]
+    ports:
+      - 8088:8088
+    env_file:
+      - config
+    networks:
+      hadoop:
+        ipv4_address: 172.18.0.4
+
+  nodemanager:
+    image: apache/hadoop:3
+    command: ["yarn", "nodemanager"]
+    env_file:
+      - config
+    networks:
+      hadoop:
+        ipv4_address: 172.18.0.5
+
+  zookeeper:
+    image: jplock/zookeeper
+    container_name: zookeeper
+    ports:
+      - '2181:2181'
+    networks:
+      hadoop:
+        ipv4_address: 172.18.0.6
+
+  hive:
+    image: apache/hive:4.0.0-beta-1
+    container_name: hive
+    environment:
+      SERVICE_NAME: hiveserver2
+    ports:
+      - "10000:10000"
+      - "10002:10002"
+    command: [ "beeline", "-u", "jdbc:hive2://localhost:10000/" ]
+    volumes:
+      - ./hive-site.xml:/opt/hive/conf/hive-site.xml
+    networks:
+      hadoop:
+        ipv4_address: 172.18.0.9
+  hue:
+    image: gethue/hue:latest
+    ports:
+      - "8888:8888"
+    volumes:
+      - ./hue-overrides.ini:/usr/share/hue/desktop/conf/hue.ini
+    networks:
+      hadoop:
+        ipv4_address: 172.18.0.10
+
+  jupyterlab:
+    image: andreper/jupyterlab:3.0.0-spark-3.0.0
+    container_name: jupyterlab
+    ports:
+      - 9999:8888
+      - 4040:4040
+    volumes:
+      - workspace_volume:/opt/workspace
+    networks:
+      hadoop:
+        ipv4_address: 172.18.0.11
+  spark-master:
+    image: andreper/spark-master:3.0.0
+    container_name: spark-master
+    ports:
+      - 8080:8080
+      - 7077:7077
+    volumes:
+      - workspace_volume:/opt/workspace
+    networks:
+      hadoop:
+        ipv4_address: 172.18.0.12
+
+  spark-worker-1:
+    image: andreper/spark-worker:3.0.0
+    container_name: spark-worker-1
+    environment:
+      - SPARK_WORKER_CORES=4
+      - SPARK_WORKER_MEMORY=4g
+    ports:
+      - 8081:8081
+    volumes:
+      - workspace_volume:/opt/workspace
+    depends_on:
+      - spark-master
+    networks:
+      hadoop:
+        ipv4_address: 172.18.0.13
+
+  spark-worker-2:
+    image: andreper/spark-worker:3.0.0
+    container_name: spark-worker-2
+    environment:
+      - SPARK_WORKER_CORES=4
+      - SPARK_WORKER_MEMORY=4g
+    ports:
+      - 8082:8081
+    volumes:
+      - workspace_volume:/opt/workspace
+    depends_on:
+      - spark-master
+    networks:
+      hadoop:
+        ipv4_address: 172.18.0.14
+
+  kafka:
+    image: ches/kafka
+    container_name: kafka
+    ports:
+      - "7203:7203"
+      - "9092:9092"
+    environment:
+      KAFKA_ADVERTISED_HOST_NAME: 172.18.0.7
+      ZOOKEEPER_IP: 172.18.0.6
+    networks:
+      hadoop:
+        ipv4_address: 172.18.0.7
+
+  kafka-topic-creator:
+    image: ches/kafka
+    depends_on:
+      - kafka
+    command: kafka-topics.sh --create --topic crypto --replication-factor 1 --partitions 1 --zookeeper 172.18.0.6:2181
+    networks:
+      - hadoop
+  temp_container:
+    depends_on:
+      - jupyterlab
+    image: busybox
+    volumes:
+      - ./workspace:/opt/workspace
+      - workspace_volume:/opt/destination_workspace
+    command: [ "sh", "-c", "cp -r /opt/workspace/* /opt/destination_workspace/ && ls -l /opt/destination_workspace/" ]
+
+networks:
+  hadoop:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.18.0.0/16
+
+volumes:
+  workspace_volume:
+    driver: local
