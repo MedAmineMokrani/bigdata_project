@@ -101,7 +101,7 @@ Network Configuration
 The services are connected to a custom Docker bridge network named "hadoop" with the subnet 172.18.0.0/16.
 Volumes
 
-A local volume named "shared-workspace" is created to share data between JupyterLab and Spark services.
+A local volume named "workspace_volume" is created to share data between JupyterLab and Spark services.
 
 Feel free to customize the configurations and adapt them according to your specific needs.
 
