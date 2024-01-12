@@ -12,14 +12,19 @@ Prerequisites
 To initiate the Hive Metastore server, you need to manually start it within the Hive container using the following command, Failure to do so will prevent you from writing Hive tables using Spark and visualizing databases in Hue.
 - hive --service metastore
 
-If you do not receive any response while executing any jupyter notebook, please restart the kernel.
+1 - If you do not receive any response while executing any jupyter notebook, please restart the kernel.
+
+2 - You must Stop SparkSession before executing another notebook, except when dealing with streaming processing.
 
 
+
+
+## How to Use:
 
 Clone the repository:
 
 - git clone https://github.com/your/repository.git
-cd repository
+  cd repository
 
 
 Build and run the Docker containers:
@@ -28,19 +33,18 @@ Build and run the Docker containers:
 
 - docker-compose up -d
 
+1 - Access localhost:9999 to discover numbered notebooks from 0 to 5, starting from "init" to download necessary dependencies.
 
-## How to Use:
+2 - Execute notebooks numbered 1, 2, and 3 for batch processing.
 
-1- Access localhost:9999 to discover numbered notebooks, starting from "init" to download necessary dependencies.
+3 - Simultaneously, launch notebooks 4 and 5 for streaming processing.
 
-2- Execute notebooks numbered 1, 2, and 3 for batch processing. Simultaneously, launch notebooks 4 and 5 for streaming processing.
-
-3- After running the batch processing notebooks, open Hue at http://localhost:8888. Use the file explorer to view databases and files.
+4 - After running the batch processing notebooks, open Hue at http://localhost:8888. Use Hive page to check databases and the file explorer to view  files.
 
         Login: admin
         Password: admin
 
-4- Run the PowerBi File to access the dashboard.
+4- Run the PowerBi File to access the dashboard. Refresh the data if needed.
 
 ### Services
 
