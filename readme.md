@@ -23,8 +23,8 @@ To initiate the Hive Metastore server, you need to manually start it within the 
 
 Clone the repository:
 
-- git clone https://github.com/your/repository.git
-  cd repository
+- git clone https://github.com/MedAmineMokrani/bigdata_project
+
 
 
 Build and run the Docker containers:
